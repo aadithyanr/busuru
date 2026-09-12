@@ -1,28 +1,27 @@
-# cycleuru
+# busuru
 
-Watch Bengaluru try to move in real time.
+BMTC buses, moving through Bengaluru.
 
-Cycleuru turns live road speeds into a moving portrait of the city. Cool blue streaks are moving freely; amber and red ones are having a very Bengaluru day.
-
-Click a road to compare its current speed with its usual free-flow speed, or use **Find a jam** to jump between familiar bottlenecks.
+Each light is one timetabled trip from a representative sample. Search for a route, stop, or time; click a bus to follow it; or press `R` to pick one at random.
 
 ## How it works
 
-MapLibre renders the city while a small server route fetches live traffic flow from TomTom without exposing the API key. The moving streaks visualize road-flow samples, not individual vehicles.
+The browser loads a compact snapshot of Bengaluru's BMTC schedule, decodes the route geometry, and places each bus between its first and last scheduled stop. There is no backend and the animation is not live GPS.
 
-## Run locally
+The current snapshot contains 57,836 trips, 9,960 stops, and 7,355 route shapes. Source timings are community-maintained and may differ from service on the street.
 
-Create `.env.local`:
-
-```bash
-TOMTOM_API_KEY=your_key
-```
-
-Then run:
+## Run
 
 ```bash
 npm install
+cp .env.example .env.local
 npm run dev
 ```
 
-Traffic data © TomTom. Map data © OpenStreetMap contributors.
+Add a public Mapbox token to `.env.local`. Run `python scripts/prepare_bmtc.py` to rebuild the browser files from the latest feed.
+
+## Data
+
+Contains information from the [community-maintained BMTC GTFS dataset](https://github.com/Vonter/bmtc-gtfs), made available under the [Open Database License](https://opendatacommons.org/licenses/odbl/1-0/).
+
+Map © Mapbox and OpenStreetMap contributors.
