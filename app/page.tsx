@@ -101,7 +101,12 @@ function addTrafficLayers(map: MapLibreMap, isPreview: boolean) {
   map.addLayer({
     id: 'traffic-glow', type: 'line', source: 'traffic-flow', ...sourceLayer,
     layout: { 'line-cap': 'round', 'line-join': 'round' },
-    paint: { 'line-color': TRAFFIC_COLOR, 'line-width': ['*', width, 2.8], 'line-opacity': 0.2, 'line-blur': 7 },
+    paint: {
+      'line-color': TRAFFIC_COLOR,
+      'line-width': ['interpolate', ['linear'], ['zoom'], 9, 2.8, 14, 9, 18, 19.6],
+      'line-opacity': 0.2,
+      'line-blur': 7,
+    },
   });
   map.addLayer({
     id: 'traffic-core', type: 'line', source: 'traffic-flow', ...sourceLayer,
