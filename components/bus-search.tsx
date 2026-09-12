@@ -3,7 +3,7 @@
 import type { BmtcStop, BusPattern } from '@/lib/bmtc';
 import { formatClock } from '@/lib/bmtc';
 import * as chrono from 'chrono-node';
-import { BusFront, Clock3, MapPin, Route, Search, X } from 'lucide-react';
+import { Clock3, MapPin, Route, Search, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 type RouteResult = {
@@ -22,6 +22,15 @@ type Props = {
   onSelectRoute: (result: RouteResult) => void;
   onSelectStop: (stop: BmtcStop) => void;
 };
+
+const FEATURED_STOPS = [
+  { id: '21177', label: 'HSR Layout' },
+  { id: '22390', label: 'Indiranagar' },
+  { id: '21275', label: 'Koramangala' },
+  { id: '20866', label: 'Whitefield' },
+  { id: '21934', label: 'Electronic City' },
+  { id: '20999', label: 'Manyata Tech Park' },
+] as const;
 
 function makeRouteResults(patterns: BusPattern[]) {
   const grouped = new Map<string, RouteResult>();
@@ -45,57 +54,84 @@ function parsedSeconds(query: string) {
 
 export function BusSearch({ open, patterns, stops, onClose, onJumpToTime, onSelectRoute, onSelectStop }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [mode, setMode] = useState<'route' | 'stop' | 'time'>('route');
   const [query, setQuery] = useState('');
   const routes = useMemo(() => makeRouteResults(patterns), [patterns]);
-  const time = useMemo(() => mode === 'time' ? parsedSeconds(query) : null, [mode, query]);
+  const time = useMemo(() => parsedSeconds(query), [query]);
+
+  const featuredStops = useMemo(() => FEATURED_STOPS
+    .flatMap((featured) => {
+      const stop = stops.find((candidate) => candidate[0] === featured.id);
+      return stop ? [{ ...featured, stop }] : [];
+    }), [stops]);
 
   const routeMatches = useMemo(() => {
-    if (mode !== 'route' || !query.trim()) return [];
+    if (!query.trim()) return [];
     const needle = query.trim().toLowerCase();
     return routes
       .filter((route) => `${route.shortName} ${route.longName}`.toLowerCase().includes(needle))
-      .slice(0, 8);
-  }, [mode, query, routes]);
+      .sort((a, b) => {
+        const score = (route: RouteResult) => route.shortName.toLowerCase() === needle
+          ? 0
+          : route.shortName.toLowerCase().startsWith(needle)
+            ? 1
+            : 2;
+        return score(a) - score(b) || a.shortName.localeCompare(b.shortName, undefined, { numeric: true });
+      })
+      .slice(0, 4);
+  }, [query, routes]);
 
   const stopMatches = useMemo(() => {
-    if (mode !== 'stop' || query.trim().length < 2) return [];
+    if (query.trim().length < 2) return [];
     const needle = query.trim().toLowerCase();
     return stops
       .filter((stop) => `${stop[1]} ${stop[2]}`.toLowerCase().includes(needle))
       .sort((a, b) => {
-        const score = (stop: BmtcStop) => stop[1].toLowerCase() === needle ? 0 : stop[1].toLowerCase().startsWith(needle) ? 1 : stop[1].toLowerCase().includes(needle) ? 2 : 3;
-        return score(a) - score(b) || a[1].localeCompare(b[1]);
+        const score = (stop: BmtcStop) => stop[1].toLowerCase() === needle
+          ? 0
+          : stop[1].toLowerCase().startsWith(needle)
+            ? 1
+            : stop[1].toLowerCase().includes(needle)
+              ? 2
+              : 3;
+        return score(a) - score(b) || b[5].length - a[5].length || a[1].localeCompare(b[1]);
       })
-      .slice(0, 8);
-  }, [mode, query, stops]);
+      .slice(0, 5);
+  }, [query, stops]);
 
   useEffect(() => {
     if (!open) return;
     const frame = requestAnimationFrame(() => inputRef.current?.focus());
     return () => cancelAnimationFrame(frame);
-  }, [open, mode]);
+  }, [open]);
 
   if (!open) return null;
 
-  const switchMode = (next: 'route' | 'stop' | 'time') => {
-    setMode(next);
-    setQuery('');
+  const chooseTime = () => {
+    if (time === null) return;
+    onJumpToTime(time);
+    onClose();
   };
+
+  const chooseFirstResult = () => {
+    if (time !== null) return chooseTime();
+    if (stopMatches[0]) {
+      onSelectStop(stopMatches[0]);
+      onClose();
+      return;
+    }
+    if (routeMatches[0]) {
+      onSelectRoute(routeMatches[0]);
+      onClose();
+    }
+  };
+
+  const hasResults = time !== null || stopMatches.length > 0 || routeMatches.length > 0;
 
   return (
     <dialog className="search-backdrop" open aria-modal="true" aria-labelledby="bus-search-title">
       <button className="modal-dismiss" aria-label="Close search" onClick={onClose} />
       <section className="hud search-card">
-        <button className="search-close" aria-label="Close search" onClick={onClose}><X /></button>
-        <p className="eyebrow">Search Bengaluru</p>
-        <h2 id="bus-search-title">Find your bus.<br />Watch it move.</h2>
-
-        <div className="search-tabs" role="tablist">
-          <button className={mode === 'route' ? 'active' : ''} onClick={() => switchMode('route')}><Route /> Route</button>
-          <button className={mode === 'stop' ? 'active' : ''} onClick={() => switchMode('stop')}><MapPin /> Stop</button>
-          <button className={mode === 'time' ? 'active' : ''} onClick={() => switchMode('time')}><Clock3 /> Time</button>
-        </div>
+        <h2 className="sr-only" id="bus-search-title">Find a BMTC route, stop, neighbourhood, or time</h2>
 
         <div className="search-input-wrap">
           <Search />
@@ -105,43 +141,58 @@ export function BusSearch({ open, patterns, stops, onClose, onJumpToTime, onSele
             onChange={(event) => setQuery(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === 'Escape') onClose();
-              if (event.key === 'Enter' && time !== null) { onJumpToTime(time); onClose(); }
+              if (event.key === 'Enter') chooseFirstResult();
             }}
-            placeholder={mode === 'route' ? '500D, KIA-8…' : mode === 'stop' ? 'Silk Board, Indiranagar…' : '8:30 am, 6 pm…'}
-            aria-label={`Search by ${mode}`}
+            placeholder="Route, stop, neighbourhood or time…"
+            aria-label="Search BMTC routes, stops, neighbourhoods, or times"
             autoComplete="off"
           />
+          <button className="search-close" aria-label="Close search" onClick={onClose}><X /></button>
         </div>
 
-        <div className="search-results" aria-live="polite">
-          {routeMatches.map((route) => (
-            <button key={route.key} onClick={() => { onSelectRoute(route); onClose(); }}>
-              <BusFront />
-              <span><strong>{route.shortName}</strong><small>{route.longName}</small></span>
-              <em>{route.patternIds.length} ways</em>
-            </button>
-          ))}
+        {!query && (
+          <div className="search-examples">
+            <p>Popular tech hubs</p>
+            <div>
+              {featuredStops.map((featured) => (
+                <button key={featured.id} onClick={() => { onSelectStop(featured.stop); onClose(); }}>
+                  <MapPin />
+                  <span>{featured.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
-          {stopMatches.map((stop) => (
-            <button key={stop[0]} onClick={() => { onSelectStop(stop); onClose(); }}>
-              <MapPin />
-              <span><strong>{stop[1]}</strong><small>{stop[2] || `${stop[5].length} routes stop here`}</small></span>
-              <em>{stop[5].length} routes</em>
-            </button>
-          ))}
+        {query && (
+          <div className="search-results" aria-live="polite">
+            {time !== null && (
+              <button onClick={chooseTime}>
+                <Clock3 />
+                <span><strong>{formatClock(time)}</strong><small>Jump to this time</small></span>
+                <em>time</em>
+              </button>
+            )}
 
-          {mode === 'time' && time !== null && (
-            <button onClick={() => { onJumpToTime(time); onClose(); }}>
-              <Clock3 /><span><strong>Jump to {formatClock(time)}</strong><small>See the city scheduled at that moment</small></span>
-            </button>
-          )}
+            {stopMatches.map((stop) => (
+              <button key={stop[0]} onClick={() => { onSelectStop(stop); onClose(); }}>
+                <MapPin />
+                <span><strong>{stop[1]}</strong><small>{stop[2] || `${stop[5].length} routes stop here`}</small></span>
+                <em>stop</em>
+              </button>
+            ))}
 
-          {query && mode === 'route' && !routeMatches.length && <p>No matching BMTC route.</p>}
-          {query.length >= 2 && mode === 'stop' && !stopMatches.length && <p>No matching BMTC stop.</p>}
-          {query.length >= 2 && mode === 'time' && time === null && <p>Try a time like “8:30 am”.</p>}
-        </div>
+            {routeMatches.map((route) => (
+              <button key={route.key} onClick={() => { onSelectRoute(route); onClose(); }}>
+                <Route />
+                <span><strong>{route.shortName}</strong><small>{route.longName}</small></span>
+                <em>route</em>
+              </button>
+            ))}
 
-        {!query && <small className="search-hint">Try 500D, Silk Board, or 8:30 am.</small>}
+            {query.length >= 2 && !hasResults && <p>No route or stop found.</p>}
+          </div>
+        )}
       </section>
     </dialog>
   );
