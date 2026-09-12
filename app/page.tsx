@@ -3,21 +3,21 @@
 import { Button } from '@/components/ui/button';
 import { Info, Pause, Play, Shuffle, X } from 'lucide-react';
 import * as maplibregl from 'maplibre-gl';
-import type { LngLatLike, Map as MapLibreMap, StyleSpecification } from 'maplibre-gl';
+import type { GeoJSONSourceSpecification, LngLatLike, Map as MapLibreMap, StyleSpecification } from 'maplibre-gl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 const BENGALURU_CENTER: LngLatLike = [77.5946, 12.9716];
 const TOMTOM_KEY = process.env.NEXT_PUBLIC_TOMTOM_API_KEY;
 
-const HOTSPOTS = [
+const HOTSPOTS: [number, number][] = [
   [77.6227, 12.9177], // Silk Board
   [77.591, 13.0358], // Hebbal
   [77.6974, 12.9569], // Marathahalli
   [77.6966, 13.0077], // KR Puram
   [77.6697, 13.0056], // Tin Factory
-] as const;
+];
 
-const PREVIEW_FLOW: GeoJSON.FeatureCollection<GeoJSON.LineString> = {
+const PREVIEW_FLOW: GeoJSONSourceSpecification['data'] = {
   type: 'FeatureCollection',
   features: [
     {
@@ -152,9 +152,12 @@ export default function Home() {
   const isPreview = !TOMTOM_KEY;
 
   useEffect(() => {
-    setNow(new Date());
+    const firstFrame = window.requestAnimationFrame(() => setNow(new Date()));
     const timer = window.setInterval(() => setNow(new Date()), 1000);
-    return () => window.clearInterval(timer);
+    return () => {
+      window.cancelAnimationFrame(firstFrame);
+      window.clearInterval(timer);
+    };
   }, []);
 
   useEffect(() => {
@@ -305,14 +308,19 @@ export default function Home() {
       <footer><span>traffic · TomTom</span><span>map · OpenStreetMap</span></footer>
 
       {aboutOpen && (
-        <div className="about-backdrop" role="presentation" onClick={() => setAboutOpen(false)}>
-          <section className="hud about-card" role="dialog" aria-modal="true" aria-labelledby="about-title" onClick={(event) => event.stopPropagation()}>
+        <dialog
+          className="about-backdrop"
+          open
+          aria-modal="true"
+          aria-labelledby="about-title"
+        >
+          <section className="hud about-card">
             <button aria-label="Close about" onClick={() => setAboutOpen(false)}><X /></button>
             <p className="eyebrow">About</p><h2 id="about-title">Bengaluru traffic,<br />without the honking.</h2>
             <p>A live portrait of how quickly—or painfully slowly—the city is moving right now.</p>
             <p className="about-note">Colours show current road speed relative to normal free-flow conditions. They are not individual vehicles.</p>
           </section>
-        </div>
+        </dialog>
       )}
     </main>
   );
