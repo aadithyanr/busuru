@@ -1,5 +1,5 @@
 {
-  "name": "cycleuru",
+  "name": "busuru",
   "version": "0.1.0",
   "private": true,
   "engines": {
@@ -14,7 +14,12 @@
   },
   "dependencies": {
     "@base-ui/react": "1.7.0",
+    "@deck.gl/core": "^9.4.0",
+    "@deck.gl/geo-layers": "^9.4.0",
+    "@deck.gl/layers": "^9.4.0",
+    "@deck.gl/mapbox": "^9.4.0",
     "@shadcn/react": "0.3.0",
+    "chrono-node": "^2.9.0",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "cmdk": "1.1.1",
@@ -22,7 +27,7 @@
     "embla-carousel-react": "8.5.2",
     "input-otp": "1.4.2",
     "lucide-react": "1.31.0",
-    "maplibre-gl": "^6.9.0",
+    "mapbox-gl": "^3.30.0",
     "react": "19.2.6",
     "react-day-picker": "9.8.1",
     "react-dom": "19.2.6",
