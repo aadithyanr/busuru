@@ -13,7 +13,7 @@ import type { PickingInfo } from '@deck.gl/core';
 import { TripsLayer } from '@deck.gl/geo-layers';
 import { ScatterplotLayer } from '@deck.gl/layers';
 import { MapboxOverlay } from '@deck.gl/mapbox';
-import { BusFront, Info, LoaderCircle, Pause, Play, Search, Shuffle, X } from 'lucide-react';
+import { BusFront, LoaderCircle, Pause, Play, Search, Shuffle, X } from 'lucide-react';
 import mapboxgl, { type GeoJSONSource, type Map as MapboxMap } from 'mapbox-gl';
 import type { Feature, FeatureCollection, LineString, Point } from 'geojson';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -38,6 +38,7 @@ type AnimatedTrip = {
   end: number;
   path: Path;
   timestamps: number[];
+  color: [number, number, number];
 };
 
 type Selection =
@@ -54,6 +55,13 @@ const AMBIENT_SAMPLE_RATE = 9;
 const TRAIL_SECONDS = 95;
 const EMPTY_LINES: FeatureCollection<LineString> = { type: 'FeatureCollection', features: [] };
 const EMPTY_STOPS: FeatureCollection<Point> = { type: 'FeatureCollection', features: [] };
+const ROUTE_COLORS: Array<[number, number, number]> = [
+  [125, 207, 255],
+  [187, 154, 247],
+  [102, 214, 172],
+  [247, 118, 142],
+  [245, 190, 92],
+];
 
 function distanceBetween(a: Coordinate, b: Coordinate) {
   const latitude = ((a[1] + b[1]) / 2) * (Math.PI / 180);
@@ -87,6 +95,12 @@ function pointAt(path: Path, progress: number): Coordinate {
   return [start[0] + (end[0] - start[0]) * fraction, start[1] + (end[1] - start[1]) * fraction];
 }
 
+function routeColor(key: string): [number, number, number] {
+  let hash = 0;
+  for (let index = 0; index < key.length; index += 1) hash = Math.imul(31, hash) + key.charCodeAt(index) | 0;
+  return ROUTE_COLORS[Math.abs(hash) % ROUTE_COLORS.length];
+}
+
 function makeAnimatedTrip(data: BmtcData, paths: Path[], tripIndex: number): AnimatedTrip | null {
   const trip = data.trips[tripIndex];
   const pattern = data.patterns[trip?.[0]];
@@ -100,6 +114,7 @@ function makeAnimatedTrip(data: BmtcData, paths: Path[], tripIndex: number): Ani
     end: trip[2],
     path,
     timestamps: path.cumulative.map((distance) => trip[1] + distance / path.length * duration),
+    color: routeColor(`${pattern[0]}:${pattern[1]}`),
   };
 }
 
@@ -135,12 +150,6 @@ function addSelectionLayers(map: MapboxMap) {
   });
 }
 
-function formatDay() {
-  return new Intl.DateTimeFormat('en-GB', {
-    timeZone: 'Asia/Kolkata', weekday: 'short', day: 'numeric', month: 'short',
-  }).format(new Date()).toUpperCase();
-}
-
 function fitPaths(map: MapboxMap, paths: Path[]) {
   const bounds = new mapboxgl.LngLatBounds();
   for (const path of paths) for (const coordinate of path.coordinates) bounds.extend(coordinate);
@@ -163,10 +172,10 @@ export default function Home() {
   const pausedRef = useRef(false);
   const lastFrameRef = useRef(0);
   const lastDisplayRef = useRef(0);
+  const lastCameraRef = useRef(0);
 
   const [data, setData] = useState<BmtcData | null>(null);
   const [displaySeconds, setDisplaySeconds] = useState(INITIAL_SECONDS);
-  const [visibleCount, setVisibleCount] = useState(0);
   const [selection, setSelection] = useState<Selection | null>(null);
   const [paused, setPaused] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -189,7 +198,9 @@ export default function Home() {
           data: trips,
           getPath: (trip) => trip.path.coordinates,
           getTimestamps: (trip) => trip.timestamps,
-          getColor: (trip) => isHighlighted(trip, selectionNow) ? [255, 122, 53, 235] : selectionNow ? [157, 221, 246, 32] : [174, 229, 250, 135],
+          getColor: (trip) => isHighlighted(trip, selectionNow)
+            ? [255, 122, 53, 235]
+            : [trip.color[0], trip.color[1], trip.color[2], selectionNow ? 30 : 150],
           getWidth: (trip) => isHighlighted(trip, selectionNow) ? 3 : 1.4,
           widthMinPixels: 1.4,
           trailLength: TRAIL_SECONDS,
@@ -205,7 +216,9 @@ export default function Home() {
           data: active,
           getPosition: (trip) => pointAt(trip.path, (seconds - trip.start) / (trip.end - trip.start)),
           getRadius: (trip) => isHighlighted(trip, selectionNow) ? 4.2 : 2.15,
-          getFillColor: (trip) => isHighlighted(trip, selectionNow) ? [255, 122, 53, 255] : selectionNow ? [180, 230, 249, 72] : [215, 245, 255, 235],
+          getFillColor: (trip) => isHighlighted(trip, selectionNow)
+            ? [255, 122, 53, 255]
+            : [trip.color[0], trip.color[1], trip.color[2], selectionNow ? 65 : 245],
           radiusUnits: 'pixels',
           stroked: true,
           getLineColor: [255, 255, 255, 110],
@@ -262,7 +275,16 @@ export default function Home() {
     } : EMPTY_STOPS);
     if (focus && map) {
       if (next?.kind === 'stop') map.easeTo({ center: [next.stop[3], next.stop[4]], zoom: 14.5, duration: 750 });
-      else if (routePaths.length) fitPaths(map, routePaths);
+      else if (next?.kind === 'bus') {
+        const trip = dataRef.current?.trips[next.tripIndex];
+        const pattern = trip ? dataRef.current?.patterns[trip[0]] : undefined;
+        const path = pattern ? pathsRef.current[pattern[6]] : undefined;
+        if (trip && path) {
+          const position = pointAt(path, (secondsRef.current - trip[1]) / (trip[2] - trip[1]));
+          lastCameraRef.current = performance.now() + 700;
+          map.easeTo({ center: position, zoom: 13.6, pitch: 0, duration: 950 });
+        }
+      } else if (routePaths.length) fitPaths(map, routePaths);
     }
     renderTrips();
   }, [renderTrips, updateRenderedTrips]);
@@ -340,10 +362,20 @@ export default function Home() {
         secondsRef.current = (secondsRef.current + delta * PLAYBACK_SPEED / 1000) % 86_400;
         renderTrips();
       }
+      const selected = selectedRef.current;
+      if (selected?.kind === 'bus' && !pausedRef.current && timestamp - lastCameraRef.current > 250) {
+        lastCameraRef.current = timestamp;
+        const trip = dataRef.current?.trips[selected.tripIndex];
+        const pattern = trip ? dataRef.current?.patterns[trip[0]] : undefined;
+        const path = pattern ? pathsRef.current[pattern[6]] : undefined;
+        if (trip && path && secondsRef.current <= trip[2]) {
+          const position = pointAt(path, (secondsRef.current - trip[1]) / (trip[2] - trip[1]));
+          mapRef.current?.easeTo({ center: position, duration: 270, easing: (value) => value });
+        }
+      }
       if (timestamp - lastDisplayRef.current > 160) {
         lastDisplayRef.current = timestamp;
         setDisplaySeconds(secondsRef.current);
-        if (dataRef.current) setVisibleCount(activeTripIdsRef.current.length);
       }
       animation = requestAnimationFrame(frame);
     };
@@ -357,9 +389,14 @@ export default function Home() {
   }, []);
 
   const randomBus = useCallback(() => {
-    const active = activeTripIdsRef.current;
-    if (!active.length) return;
-    selectBus(active[Math.floor(Math.random() * active.length)]);
+    const bmtc = dataRef.current;
+    if (!bmtc) return;
+    const eligible = activeTripIdsRef.current.filter((tripIndex) => {
+      const trip = bmtc.trips[tripIndex];
+      return secondsRef.current < (trip[1] + trip[2]) / 2;
+    });
+    if (!eligible.length) return;
+    selectBus(eligible[Math.floor(Math.random() * eligible.length)]);
   }, [selectBus]);
 
   const jumpToTime = useCallback((seconds: number) => {
@@ -410,21 +447,14 @@ export default function Home() {
       <div className="map-vignette" />
 
       <nav className="hud-controls" aria-label="Playback controls">
-        <button className="hud-button search-button" onClick={() => setSearchOpen(true)}><Search /><span>Find a bus</span><kbd>S</kbd></button>
-        <button className="hud-button" onClick={togglePause}>{paused ? <Play /> : <Pause />}<span>{paused ? 'Play' : 'Pause'}</span><kbd>Space</kbd></button>
-        <button className="hud-button" onClick={randomBus}><Shuffle /><span>Random bus</span><kbd>R</kbd></button>
-        <button className="hud-button" onClick={() => setAboutOpen(true)}><Info /><span>About</span><kbd>A</kbd></button>
+        <button className="hud-button search-button" onClick={() => setSearchOpen(true)} title="Find a bus (S)"><Search /><span>Find a bus</span></button>
+        <button className="hud-button icon-button" onClick={togglePause} aria-label={paused ? 'Play' : 'Pause'} title={`${paused ? 'Play' : 'Pause'} (Space)`}>{paused ? <Play /> : <Pause />}</button>
+        <button className="hud-button icon-button" onClick={randomBus} aria-label="Random bus" title="Random bus (R)"><Shuffle /></button>
+        {/* About stays available with the A key while its button is intentionally hidden. */}
       </nav>
 
-      <div className="hud time-card">
-        <span>{formatDay()}</span>
+      <div className="time-readout">
         <strong>{formatClock(displaySeconds)}</strong>
-      </div>
-
-      <div className="hud flow-card">
-        <div className="flow-heading"><strong>{visibleCount.toLocaleString()}</strong></div>
-        <p>MOVING</p>
-        <small>scheduled sample</small>
       </div>
 
       <section className="timeline hud" aria-label="Daily bus timeline">
@@ -435,7 +465,6 @@ export default function Home() {
 
       <div className="brand-mark">
         <h1>busuru</h1>
-        <span><i /> Bengaluru · scheduled</span>
       </div>
 
       {selectedDetails && (

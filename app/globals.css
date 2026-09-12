@@ -97,79 +97,62 @@ a { color: inherit; text-decoration: none; }
   top: 15px;
   left: 15px;
   display: flex;
-  flex-direction: column;
-  gap: 5px;
+  height: 42px;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 11%);
+  border-radius: 13px;
+  background: rgb(7 9 11 / 70%);
+  box-shadow: 0 10px 28px rgb(0 0 0 / 30%);
+  backdrop-filter: blur(16px) saturate(1.08);
+  -webkit-backdrop-filter: blur(16px) saturate(1.08);
 }
 
 .hud-button {
   display: flex;
-  width: 148px;
-  height: 36px;
+  width: auto;
+  height: 100%;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   gap: 8px;
-  border: 1px solid rgb(255 255 255 / 11%);
-  border-radius: 999px;
-  background: rgb(7 9 11 / 68%);
-  padding: 0 7px 0 11px;
+  border: 0;
+  border-right: 1px solid rgb(255 255 255 / 9%);
+  border-radius: 0;
+  background: transparent;
+  padding: 0 13px;
   color: rgb(255 255 255 / 84%);
-  box-shadow: 0 8px 25px rgb(0 0 0 / 28%);
-  backdrop-filter: blur(15px);
   font-size: 12px;
   font-weight: 500;
-  transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+  transition: background 120ms ease, color 120ms ease;
 }
-.hud-button:hover { transform: translateY(-1px); border-color: rgb(255 255 255 / 18%); background: rgb(19 22 24 / 84%); color: white; }
-.hud-button:active { transform: scale(0.98); }
+.hud-button:last-child { border-right: 0; }
+.hud-button:hover { background: rgb(255 255 255 / 8%); color: white; }
+.hud-button:active { background: rgb(255 255 255 / 13%); }
 .hud-button svg { width: 14px; height: 14px; stroke-width: 1.8; }
-.hud-button kbd {
-  margin-left: auto;
-  border: 1px solid rgb(255 255 255 / 8%);
-  border-radius: 999px;
-  background: rgb(255 255 255 / 7%);
-  padding: 2px 6px;
-  color: rgb(255 255 255 / 38%);
-  font-family: inherit;
-  font-size: 8px;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-.search-button { border-color: rgb(124 216 255 / 25%); background: rgb(19 30 35 / 76%); }
+.search-button { min-width: 116px; }
 .search-button svg { color: #8cddff; }
+.icon-button { width: 43px; padding: 0; }
 
-.time-card {
-  top: 15px;
+.time-readout {
+  position: fixed;
+  z-index: 4;
+  bottom: 65px;
   left: 50%;
-  display: flex;
-  min-width: 186px;
   transform: translateX(-50%);
-  flex-direction: column;
-  align-items: center;
-  border-radius: 14px;
-  padding: 8px 15px 9px;
+  pointer-events: none;
+  text-shadow: 0 2px 15px rgb(0 0 0 / 90%);
 }
-.time-card span { color: rgb(255 255 255 / 46%); font-size: 9px; font-weight: 500; letter-spacing: 0.055em; text-transform: uppercase; }
-.time-card strong { margin-top: 1px; font-size: 20px; font-variant-numeric: tabular-nums; font-weight: 600; letter-spacing: -0.035em; }
-
-.flow-card { top: 15px; right: 15px; width: 172px; border-radius: 14px; padding: 11px 12px 10px; }
-.flow-heading { display: flex; align-items: baseline; gap: 5px; }
-.flow-heading strong { font-size: 27px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -0.055em; }
-.flow-heading span { color: rgb(255 255 255 / 56%); font-size: 11px; }
-.flow-card p { position: absolute; top: 13px; right: 12px; margin: 0; color: rgb(255 255 255 / 38%); font-size: 8px; font-weight: 600; letter-spacing: 0.09em; }
-.flow-card small { display: block; margin-top: 4px; color: rgb(255 255 255 / 34%); font-size: 9px; font-weight: 500; }
+.time-readout strong { font-size: 15px; font-variant-numeric: tabular-nums; font-weight: 500; letter-spacing: -0.025em; }
 
 .brand-mark {
   position: fixed;
   z-index: 4;
-  bottom: 21px;
-  left: 19px;
+  top: 18px;
+  right: 19px;
   pointer-events: none;
   text-shadow: 0 2px 18px rgb(0 0 0 / 92%);
 }
-.brand-mark h1 { margin: 0; font-size: 19px; font-weight: 600; letter-spacing: -0.045em; line-height: 1; }
-.brand-mark span { display: flex; align-items: center; gap: 6px; margin-top: 6px; color: rgb(255 255 255 / 44%); font-size: 8px; font-weight: 500; letter-spacing: 0.055em; text-transform: uppercase; }
-.brand-mark i { width: 5px; height: 5px; border-radius: 999px; background: #8cddff; box-shadow: 0 0 11px rgb(124 216 255 / 82%); animation: live-pulse 2.4s ease-in-out infinite; }
+.brand-mark h1 { margin: 0; font-size: 16px; font-weight: 600; letter-spacing: -0.045em; line-height: 1; }
 
 .timeline {
   bottom: 23px;
@@ -226,7 +209,7 @@ a { color: inherit; text-decoration: none; }
 .ride-card dt { color: rgb(255 255 255 / 32%); font-size: 8px; text-transform: uppercase; }
 .ride-card dd { margin: 2px 0 0; color: rgb(255 255 255 / 75%); font-size: 11px; font-weight: 500; }
 
-.bus-card { width: min(360px, calc(100vw - 32px)); }
+.bus-card { top: 52px; right: 15px; bottom: auto; left: auto; width: min(330px, calc(100vw - 32px)); transform: none; animation: side-card-in 190ms ease-out both; }
 .bus-card > strong { display: block; max-width: calc(100% - 34px); overflow: hidden; font-size: 34px; line-height: 1; text-overflow: ellipsis; white-space: nowrap; }
 .bus-card-route { margin-top: 11px; color: rgb(255 255 255 / 67%); font-size: 11px; line-height: 1.4; }
 .bus-card > small { display: block; margin-top: 9px; color: rgb(255 255 255 / 34%); font-size: 9px; }
@@ -312,9 +295,9 @@ footer a:hover { color: rgb(255 255 255 / 55%); }
 .search-results > p { margin: 14px 5px 0; color: rgb(255 255 255 / 36%); font-size: 10px; line-height: 1.45; }
 .search-hint { display: block; margin-top: 12px; color: rgb(255 255 255 / 29%); font-size: 9px; line-height: 1.5; }
 
-@keyframes live-pulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes card-in { from { opacity: 0; transform: translate(-50%, 7px) scale(0.98); } to { opacity: 1; transform: translate(-50%, 0) scale(1); } }
+@keyframes side-card-in { from { opacity: 0; transform: translateY(7px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @keyframes modal-in { from { opacity: 0; transform: translateY(7px) scale(0.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 
@@ -324,22 +307,17 @@ footer a:hover { color: rgb(255 255 255 / 55%); }
 }
 
 @media (max-width: 680px) {
-  .hud-controls { top: auto; right: 12px; bottom: 43px; left: auto; display: grid; grid-template-columns: repeat(4, 40px); }
-  .hud-button { width: 40px; height: 40px; justify-content: center; padding: 0; }
-  .hud-button span,
-  .hud-button kbd { display: none; }
-  .time-card { top: 11px; left: 11px; min-width: 155px; transform: none; align-items: flex-start; }
-  .time-card strong { font-size: 17px; }
-  .flow-card { top: 11px; right: 10px; width: 92px; padding: 9px 10px; }
-  .flow-heading strong { font-size: 21px; }
-  .flow-heading span { font-size: 9px; }
-  .flow-card p { top: 12px; right: 9px; font-size: 7px; }
-  .flow-card small { display: none; }
-  .brand-mark { bottom: 17px; left: 13px; }
-  .timeline { right: 12px; bottom: 91px; left: 12px; width: auto; transform: none; }
-  .ride-card { bottom: 137px; }
+  .hud-controls { top: 12px; right: auto; bottom: auto; left: 12px; height: 40px; }
+  .hud-button { height: 100%; }
+  .search-button { min-width: 42px; width: 42px; padding: 0; }
+  .search-button span { display: none; }
+  .icon-button { width: 42px; }
+  .time-readout { bottom: 61px; }
+  .brand-mark { top: 25px; right: 13px; }
+  .timeline { right: 12px; bottom: 15px; left: 12px; width: auto; transform: none; }
+  .bus-card { top: 63px; right: 12px; bottom: auto; left: 12px; width: auto; transform: none; }
   .loading-pill,
-  .error-toast { bottom: 137px; }
+  .error-toast { bottom: 105px; }
   footer { display: none; }
   .mapboxgl-ctrl-bottom-right { bottom: 6px; }
 }

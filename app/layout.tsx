@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: 'busuru — Bengaluru’s buses, moving',
   description: 'Watch Bengaluru’s scheduled BMTC buses move through the city.',
+  icons: { icon: '/favicon.svg' },
   openGraph: {
     title: 'busuru — Bengaluru’s buses, moving',
     description: 'Watch Bengaluru’s scheduled BMTC buses move through the city.',
