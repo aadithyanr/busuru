@@ -2,20 +2,20 @@
 
 Watch Bengaluru try to move in real time.
 
-Cycleuru turns live road speeds into a full-screen portrait of the city. Green roads are moving normally, yellow roads are slowing down, and red roads are having a very Bengaluru day.
+Cycleuru turns live road speeds into a moving portrait of the city. Cool blue streaks are moving freely; amber and red ones are having a very Bengaluru day.
 
-Click a road to compare its current speed with its usual free-flow speed, or use **Random jam** to jump between the city's familiar bottlenecks.
+Click a road to compare its current speed with its usual free-flow speed, or use **Find a jam** to jump between familiar bottlenecks.
 
 ## How it works
 
-The browser renders Bengaluru with MapLibre and overlays live traffic flow from TomTom. There is no application backend and no simulated vehicle data.
+MapLibre renders the city while a small server route fetches live traffic flow from TomTom without exposing the API key. The moving streaks visualize road-flow samples, not individual vehicles.
 
 ## Run locally
 
 Create `.env.local`:
 
 ```bash
-NEXT_PUBLIC_TOMTOM_API_KEY=your_key
+TOMTOM_API_KEY=your_key
 ```
 
 Then run:
