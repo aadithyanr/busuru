@@ -167,6 +167,8 @@ export default function Home() {
     mapRef.current = map;
     map.on('load', () => {
       addTrafficLayers(map, isPreview);
+      map.on('mouseenter', 'traffic-core', () => { map.getCanvas().style.cursor = 'pointer'; });
+      map.on('mouseleave', 'traffic-core', () => { map.getCanvas().style.cursor = ''; });
       setTrafficReady(true);
     });
     map.on('click', async (event) => {
@@ -196,8 +198,6 @@ export default function Home() {
         setLoadingSegment(false);
       }
     });
-    map.on('mouseenter', 'traffic-core', () => { map.getCanvas().style.cursor = 'pointer'; });
-    map.on('mouseleave', 'traffic-core', () => { map.getCanvas().style.cursor = ''; });
     return () => {
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
       map.remove();
