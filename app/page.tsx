@@ -143,6 +143,7 @@ export default function Home() {
   const [segment, setSegment] = useState<Segment | null>(null);
   const [loadingSegment, setLoadingSegment] = useState(false);
   const [trafficReady, setTrafficReady] = useState(false);
+  const [trafficError, setTrafficError] = useState(false);
   const isPreview = !TOMTOM_KEY;
 
   useEffect(() => {
@@ -169,7 +170,13 @@ export default function Home() {
       addTrafficLayers(map, isPreview);
       map.on('mouseenter', 'traffic-core', () => { map.getCanvas().style.cursor = 'pointer'; });
       map.on('mouseleave', 'traffic-core', () => { map.getCanvas().style.cursor = ''; });
-      setTrafficReady(true);
+      if (isPreview) setTrafficReady(true);
+    });
+    map.on('sourcedata', (event) => {
+      if (event.sourceId === 'traffic-flow' && event.isSourceLoaded) setTrafficReady(true);
+    });
+    map.on('error', (event) => {
+      if (String(event.error?.message ?? '').toLowerCase().includes('traffic')) setTrafficError(true);
     });
     map.on('click', async (event) => {
       if (isPreview) {
@@ -268,7 +275,7 @@ export default function Home() {
       </section>
 
       <section className="hud live-card" aria-live="polite">
-        <div className="live-row"><span className={`live-dot ${trafficReady ? 'is-live' : ''}`} /><strong>{isPreview ? 'Preview traffic' : 'Live traffic'}</strong></div>
+        <div className="live-row"><span className={`live-dot ${trafficReady ? 'is-live' : ''}`} /><strong>{trafficError ? 'Traffic unavailable' : !trafficReady ? 'Loading traffic' : isPreview ? 'Preview traffic' : 'Live traffic'}</strong></div>
         <div className="legend" aria-label="Traffic speed legend">
           <span><i className="legend-fast" />moving</span><span><i className="legend-slow" />slow</span><span><i className="legend-stuck" />pain</span>
         </div>
