@@ -142,7 +142,7 @@ export default function Home() {
   const mapRef = useRef<MapLibreMap | null>(null);
   const animationRef = useRef<number | null>(null);
   const hotspotRef = useRef(0);
-  const [now, setNow] = useState(() => new Date());
+  const [now, setNow] = useState<Date | null>(null);
   const [playing, setPlaying] = useState(true);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [segment, setSegment] = useState<Segment | null>(null);
@@ -152,6 +152,7 @@ export default function Home() {
   const isPreview = !TOMTOM_KEY;
 
   useEffect(() => {
+    setNow(new Date());
     const timer = window.setInterval(() => setNow(new Date()), 1000);
     return () => window.clearInterval(timer);
   }, []);
@@ -276,7 +277,7 @@ export default function Home() {
       </section>
 
       <section className="hud time-card" aria-label="Bengaluru time">
-        <span>{formatDate(now)}</span><strong>{formatTime(now)}</strong>
+        <span>{now ? formatDate(now) : 'Bengaluru time'}</span><strong>{now ? formatTime(now) : '--:--:--'}</strong>
       </section>
 
       <section className="hud live-card" aria-live="polite">
