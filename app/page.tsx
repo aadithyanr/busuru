@@ -275,7 +275,7 @@ export default function Home() {
       </section>
 
       <header className="brand-block">
-        <p>12.9716° N, 77.5946° E</p><h1>bengaluru,<br />moving.</h1><span>watch the city try.</span>
+        <p>bengaluru · 12.9716° N, 77.5946° E</p><h1>cycleuru.</h1><span>watch bengaluru try to move.</span>
       </header>
 
       {(segment || loadingSegment) && (
