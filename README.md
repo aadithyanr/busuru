@@ -2,6 +2,8 @@
 
 # busuru
 
+https://github.com/user-attachments/assets/958cc8b9-b40e-4c59-989e-650b8c23f8f9
+
 BMTC buses, moving through Bengaluru.
 
 Each light is one timetabled trip from a representative sample. Search for a route, stop, or time; click a bus to follow it; or press `R` to pick one at random.
