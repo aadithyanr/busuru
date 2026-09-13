@@ -1,3 +1,5 @@
+<img src="./public/favicon.svg" width="64" height="64" alt="busuru logo">
+
 # busuru
 
 BMTC buses, moving through Bengaluru.
